@@ -14,17 +14,14 @@ for i = 1:length(files)
     if contains(files(i).name,'.AT2') % NGA file
         [ output_dir ] = fn_make_dir( [pwd filesep 'outputs' filesep erase(files(i).name,'.AT2')] );
         [ gm_data ] = fn_reformat_NGA_gm( files(i).name, input_dir, output_dir );
-    elseif contains(files(i).name,'.tcl') % Preformatted TCL signal
-        [ output_dir ] = fn_make_dir( [pwd filesep 'outputs' filesep erase(files(i).name,'.tcl')] );
-        gm_data = load([input_dir filesep files(i).name]);
     elseif contains(files(i).name,'.txt') % Preformatted TCL signal
         [ output_dir ] = fn_make_dir( [pwd filesep 'outputs' filesep erase(files(i).name,'.txt')] );
         [ gm_data ] = fn_reformat_txt_gm( files(i).name, input_dir, output_dir );
     else
         error('Ground Motion Data Structure Not Recognized')
     end
-    dt = gm_data(1);
-    ag = gm_data(2:end);
+    dt = gm_data(2);
+    ag = gm_data(3:end);
 
     % Calculate Spectra
     [ spectra ] = fn_single_spectra( dt, ag );
