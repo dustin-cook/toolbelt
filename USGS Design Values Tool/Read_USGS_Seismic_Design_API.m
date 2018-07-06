@@ -7,11 +7,14 @@ rng('shuffle')
 
 %% Load inputs data
 site_inputs = readtable([pwd filesep 'inputs.csv'],'ReadVariableNames',true);
+site_coefs = readtable([pwd filesep 'asce_site_coefficients.csv'],'ReadVariableNames',true);
 
 % Set up outputs table
 site = table(site_inputs.id,site_inputs.lat,site_inputs.lng,'VariableNames',{'id','lat','lng'});
 
 %% Pull Down info for each site in table
+options = weboptions;
+options.Timeout = 30;
 for i = 1:length( site_inputs.id )
     DATA = webread( [ 'https://earthquake.usgs.gov/ws/designmaps/' ...
                       site_inputs.reference_doc{i} '.json?' ], ...
@@ -19,7 +22,7 @@ for i = 1:length( site_inputs.id )
                       'longitude', site_inputs.lng(i), ...
                       'riskCategory', site_inputs.risk_cat{i}, ...
                       'siteClass', site_inputs.site_class{i}, ...
-                      'title', site_inputs.id(1) );
+                      'title', site_inputs.id(1), options );
             
     
     site.ss(i) = DATA.response.data.ss;
@@ -27,9 +30,19 @@ for i = 1:length( site_inputs.id )
 
     % Check if Fa is empty and why
     if isempty(DATA.response.data.fa)
-        site.fa{i} = DATA.response.data.fa_note;
-        site.sms{i} = 'NA';
-        site.sds{i} = 'NA';
+        % If USGS API fails to calculate site coeffs then calc manually for ASCE references
+        if contains(site_inputs.reference_doc{i},'asce') && any(strcmp(site_coefs.version,site_inputs.reference_doc{i}))            
+            filter = strcmp(site_coefs.site_coef,'f_a') & strcmp(site_coefs.version,site_inputs.reference_doc{i});
+            fa_array = site_coefs.(site_inputs.site_class{i})(filter);
+            ss_array = site_coefs.(site_inputs.site_class{i})(filter);
+            site.fa(i) = interp1(ss_array,fa_array,site.ss(i));
+            site.sms(i) = site.fa(i)*site.ss(i);
+            site.sds(i) = (2/3)*site.sms(i);
+        else
+            site.fa{i} = DATA.response.data.fa_note;
+            site.sms{i} = 'NA';
+            site.sds{i} = 'NA';
+        end
     else
         site.fa{i} = DATA.response.data.fa;
         site.sms{i} = DATA.response.data.sms;
@@ -38,14 +51,24 @@ for i = 1:length( site_inputs.id )
     
     % Check if Fv is empty and why
     if isempty(DATA.response.data.fv)
-        site.fv{i} = DATA.response.data.fv_note;
-        site.sm1{i} = 'NA';
-        site.sd1{i} = 'NA';
+        % If USGS API fails to calculate site coeffs then calc manually for ASCE reference
+        if contains(site_inputs.reference_doc{i},'asce') && any(strcmp(site_coefs.version,site_inputs.reference_doc{i}))
+            filter = strcmp(site_coefs.site_coef,'f_v') & strcmp(site_coefs.version,site_inputs.reference_doc{i});
+            fv_array = site_coefs.(site_inputs.site_class{i})(filter);
+            s1_array = site_coefs.(site_inputs.site_class{i})(filter);
+            site.fv(i) = interp1(s1_array,fv_array,site.s1(i));
+            site.sm1(i) = site.fv(i)*site.s1(i);
+            site.sd1(i) = (2/3)*site.sms(i);
+        else
+            site.fv{i} = DATA.response.data.fv_note;
+            site.sm1{i} = 'NA';
+            site.sd1{i} = 'NA';
+        end
     else
         site.fv{i} = DATA.response.data.fv;
         site.sm1{i} = DATA.response.data.sm1;
         site.sd1{i} = DATA.response.data.sd1;
-        
+      
     end
     
     % Check if SDC is empty
