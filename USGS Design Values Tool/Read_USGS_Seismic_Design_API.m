@@ -6,6 +6,7 @@ rehash
 rng('shuffle')
 
 %% Load inputs data
+<<<<<<< HEAD
 site = readtable([pwd filesep 'inputs.csv'],'ReadVariableNames',true);
 
 %% Pull Down info for each site in table
