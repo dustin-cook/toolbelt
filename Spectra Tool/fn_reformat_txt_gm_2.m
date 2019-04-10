@@ -1,21 +1,17 @@
-function [ output_txt ] = fn_reformat_txt_gm( file_name, input_dir, output_dir )
+function [ eq_data_g, eq_dt ] = fn_reformat_txt_gm_2( file_name, input_dir, output_dir, g_factor, eq_data_idx, dt_idx )
 %UNTITLED Summary of this function goes here
 %   Detailed explanation goes here
 
 % Load GM File
 txt_data = fileread([input_dir filesep file_name]);
-
-data_raw = str2double(strsplit(txt_data,' '));
+txt_data_cell = strsplit(txt_data,'\n');
+data_raw = str2double(txt_data_cell);
 data = data_raw(~isnan(data_raw));
 
-% Find G Conversion
-g_factor = 980.665;
-
-% Find dt
-dt = 0.01;
-
 % Crop data to just Earthquake and translate to data
-eq_data = data(1:end);
+eq_dt = str2double(strrep(txt_data_cell(dt_idx),'dt = ',''));
+eq_data = data_raw(eq_data_idx:end);
+eq_data = eq_data(~isnan(eq_data));
 eq_data_g = eq_data/g_factor;
 
 % Loop through data to create single line signal for running in opensees
@@ -26,7 +22,7 @@ end
 fclose(fileID);
 
 % Loop through data to create single line signal with g-factor and dt as txt doc
-output_txt = [g_factor,dt,eq_data_g];
+output_txt = [g_factor,eq_dt,eq_data_g];
 fileID = fopen([output_dir filesep file_name],'w');
 for j = 1:length(output_txt)
     fprintf(fileID,'%d \n',output_txt(j));
