@@ -15,7 +15,7 @@
 % File again modified by Curt Haselton to output response TH on 3-16-09
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function[psuedoAccelerationTH, displacementTH, accelerationTH] = fn_sdof_th(T, z, ag, dt)
+function[psuedoAccelerationTH, displacementTH, accelerationTH, velocityTH] = fn_sdof_th(T, z, ag, dt)
 
 % INPUT 
 % T     = period                            ( scalar, seconds )
