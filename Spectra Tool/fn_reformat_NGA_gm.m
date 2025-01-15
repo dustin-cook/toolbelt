@@ -1,4 +1,4 @@
-function [ output_txt ] = fn_reformat_NGA_gm( file_name, input_dir, output_dir )
+function [ output_txt, pga, dt, eq_length ] = fn_reformat_NGA_gm( file_name, input_dir, output_dir )
 %UNTITLED Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -41,6 +41,10 @@ for j = 1:length(output_txt)
     fprintf(fileID,'%d \n',output_txt(j));
 end
 fclose(fileID);
+
+% assemble meta data
+pga = max(abs(eq_data_g));
+eq_length = length(eq_data_g);
 
 
 end

@@ -1,0 +1,35 @@
+name,lon,lat,region
+Century City CA,-118.4,34.05,so cal
+Concord CA,-122,37.95,nor cal
+Irvine CA,-117.8,33.65,so cal
+Long Beach CA,-118.2,33.8,so cal
+Los Angeles CA,-118.25,34.05,so cal
+Monterey CA,-121.9,36.6,nor cal
+Northridge CA,-118.55,34.2,so cal
+Oakland CA,-122.25,37.8,nor cal
+Riverside CA,-117.4,33.95,so cal
+Sacramento CA,-121.5,38.6,nor cal
+Santa Barbara CA,-119.7,34.45,so cal
+Santa Cruz CA,-122.05,36.95,nor cal
+Santa Rosa CA,-122.7,38.45,nor cal
+San Bernardino CA,-117.3,34.1,so cal
+San Diego CA,-117.15,32.7,so cal
+San Francisco CA,-122.4,37.75,nor cal
+San Jose CA,-121.9,37.35,nor cal
+San Luis Obispo CA,-120.65,35.3,so cal
+San Mateo CA,-122.3,37.55,nor cal
+Vallejo CA,-122.25,38.1,nor cal
+Ventura CA,-119.3,34.3,so cal
+Boise ID,-116.2,43.6,WUS
+Chicago IL,-87.65,41.85,CEUS
+St Louis MO,-90.2,38.6,CEUS
+Las Vegas NV,-115.15,36.2,WUS
+Reno NV,-119.8,39.55,WUS
+New York NY,-74,40.75,CEUS
+Portland OR,-122.65,45.5,PNW
+Charleston SC,-79.95,32.8,CEUS
+Memphis TN,-90.05,35.15,CEUS
+Salt Lake City UT,-111.9,40.75,WUS
+Everett WA,-122.2,48,PNW
+Seattle WA,-122.3,47.6,PNW
+Tacoma WA,-122.45,47.25,PNW
