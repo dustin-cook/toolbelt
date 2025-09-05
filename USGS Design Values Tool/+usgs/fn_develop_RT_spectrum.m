@@ -57,6 +57,9 @@ for t1 = 1:length(T_vec)
     else
         rt_spectrum.sa(t1) = rtgm;
     end
+    
+    rt_spectrum.return_period(t1) = 1/exp(interp1(gms,log(afes),rtgm));
+    rt_spectrum.return_period_67(t1) = 1/exp(interp1(gms,log(afes),rtgm*2/3));
 end
 
 rt_spectrum.period = T_vec;

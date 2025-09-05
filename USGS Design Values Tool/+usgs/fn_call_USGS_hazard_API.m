@@ -15,7 +15,7 @@ function [DATA, status] = fn_call_USGS_hazard_API(edition, lat, lon, vs30)
 %   status = [sting] status of webcall
 
 % Set parameters
-options = weboptions('Timeout', 60);         
+options = weboptions('Timeout', 30);         
 
 try
     %% Call USGS Hazards API

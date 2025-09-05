@@ -20,87 +20,94 @@ pause_time = 30; % seconds
 %% Imports
 import usgs.*
 
+%%%%%% NEED TO RUN THIS FROM AN ID SCRIPT INSTEAD OF OVERWRITTING EACH TIME %%%%%%%%%
+
 %% Go through each site and call USGS API
+id = 0;
 for s = 1:height(sites)
-    if any(ismember(sites.Properties.VariableNames,'log')) && sites.log(s) == 0
-        s
 
+    % Set default site classes to pull
+    if ~isempty(sites.site_class{s})
+        site_class = sites.site_class(s);
+        vs30 = sites.vs30(s); %must be the same length as site clas
+    else
+        site_class = {'BC', 'C', 'D', 'E'};
+        vs30 = [760 530 265 150];
+
+%             site_class = {'A'  'B'  'BC' 'C' 'CD' 'D' 'DE' 'E'};
+%             vs30 =       [1500 1080 760  530 365  265 180  150];
+    end
+
+    % Call USGS for each applicable site class and save
+    for v = 1:length(vs30)
+        id = id + 1;
+
+        if any(ismember(sites.Properties.VariableNames,'log')) && sites.log(s) == 0
         call_success = 1;
-        
+
         % build output data structure
-        out(s).name = sites.name{s};
-        out(s).lat = sites.lat(s);
-        out(s).lon = sites.lon(s);
-        out(s).region = sites.region{s};
-        out(s).sdc = sites.sdc{s};
-        out(s).usgs_160_id = sites.usgs_160_id(s);
-        out(s).nehrp_34_id = sites.nehrp_34_id(s);
-        out(s).frtc_testbed_id = sites.frtc_testbed_id(s);
+        out(id).name = sites.name{s};
+        out(id).lat = sites.lat(s);
+        out(id).lon = sites.lon(s);
+        out(id).region = sites.region{s};
+        out(id).sdc = sites.sdc{s};
+        out(id).usgs_160_id = sites.usgs_160_id(s);
+        out(id).nehrp_34_id = sites.nehrp_34_id(s);
+        out(id).frtc_testbed_id = sites.frtc_testbed_id(s);
+        out(id).site_class = site_class{v};
+        out(id).vs30 = vs30(v);
 
-        % Set default site classes to pull
-        if ~isempty(sites.site_class{s})
-            site_class = sites.site_class(s);
-        else
-            site_class = {'BC', 'C', 'D'};
-        end
-        
-        % Set default vs30s to pull
-        if ~isnan(sites.vs30(s))
-            vs30 = sites.vs30(s); %must be the same length as site clas
-        else
-            vs30 = [760 530 265];
-        end
-        
-        % Save site class and vs30 to out data
-        out(s).site_class = site_class;
-        out(s).vs30 = vs30;
-        
-        for v = 1:length(vs30)
-            if call_success
-                % Pull design values for this site
-                [design_values, MPS, status_design] = fn_call_USGS_design_value_API(1, 'asce7-22', sites.lat(s), sites.lon(s), 'II', site_class{v});
+        % Pull design values for this site
+        if ~isfield(out,'design_values') || isempty(out(id).design_values)
+            [design_values, MPS, status_design] = fn_call_USGS_design_value_API(1, 'asce7-22', sites.lat(s), sites.lon(s), 'II', site_class{v});
+            fprintf('ASCe 7-22 Desgin Call: %s\n', status_design)
+            if strcmp(status_design,'success')
+                out(id).design_values = design_values;
+                out(id).design_values.MPS = MPS;
                 pause(pause_time)
-                
-                % Read 2018 hazard data for this site
-                [DATA_2018, status_2018] = fn_call_USGS_hazard_API(2018, sites.lat(s), sites.lon(s), vs30(v));
-                pause(pause_time)
-                
-                % Read 2018 hazard data for this site
-                [DATA_2023, status_2023] = fn_call_USGS_hazard_API(2023, sites.lat(s), sites.lon(s), vs30(v));
-                pause(pause_time)
-
-                if strcmp(status_design,'success') && strcmp(status_2018,'success') && strcmp(status_2023,'success') % If all succeed
-                    % Save data into matlab struture
-                    out(s).design_values.(['site_class_' site_class{v}]) = design_values;
-                    out(s).design_values.(['site_class_' site_class{v}]).MPS = MPS;
-                    out(s).hazard_curve.nshm_2018.(['vs30_' num2str(vs30(v))]) = DATA_2018.response.hazardCurves;
-                    out(s).hazard_curve.nshm_2023.(['vs30_' num2str(vs30(v))]) = DATA_2023.response.hazardCurves;
-
-                    save('DATA_usgs_api.mat','out')
-                else
-                    % Calls failed, come back later to finish this off
-                    call_success = 0;
-                    
-                    fprintf('ASCe 7-22 Desgin Call: %s\n', status_design)
-                    fprintf('2018 Hazard Call: %s\n', status_2018)
-                    fprintf('2023 Hazard Call: %s\n', status_2023)
-                    
-                    if ~strcmp(status_design,'success')
-                        pause(4*pause_time) % pause extra long when erros occur
-                    end
-                    
-                    if contains([status_hazard2018,status_hazard2023],'Too Many Requests')
-                        pause(4*pause_time) % pause extra long when erros occur
-                    end
-                end
+            else
+                pause(4*pause_time) % pause extra long when erros occur (come back and finish later)
             end
         end
-        
-        % log success rate
-        sites.log(s) = call_success;
-        writetable(sites,'sites.csv')
-        save('DATA_usgs_api.mat','out')
+
+        % Read 2018 hazard data for this site
+        if ~isfield(out,'hazard_curve') || ~isfield(out(id).hazard_curve,'nshm_2018') || isempty(out(id).hazard_curve.nshm_2018)
+            [DATA_2018, status_2018] = fn_call_USGS_hazard_API(2018, sites.lat(s), sites.lon(s), vs30(v));
+            fprintf('2018 Hazard Call: %s\n', status_2018)
+            if strcmp(status_2018,'success')
+                out(id).hazard_curve.nshm_2018 = DATA_2018.response.hazardCurves;
+                pause(pause_time)
+            elseif contains(status_2018,'Too Many Requests')
+                pause(4*pause_time) % pause extra long when this erros occur
+            else
+                pause(pause_time)
+            end
+        end
+
+        % Read 2023 hazard data for this site
+        if ~isfield(out,'hazard_curve') || ~isfield(out(id).hazard_curve,'nshm_2023') || isempty(out(id).hazard_curve.nshm_2023)
+            [DATA_2023, status_2023] = fn_call_USGS_hazard_API(2023, sites.lat(s), sites.lon(s), vs30(v));
+            fprintf('2023 Hazard Call: %s\n', status_2023)
+            if strcmp(status_2023,'success')
+                out(id).hazard_curve.nshm_2023 = DATA_2023.response.hazardCurves;
+                pause(pause_time)
+            elseif contains(status_2023,'Too Many Requests')
+                pause(4*pause_time) % pause extra long when this erros occur
+            else
+                pause(pause_time)
+            end
+        end
+
+        end
     end
+%     % Save data for this site 
+%     tic
+%     save('DATA_usgs_api.mat','out')
+%     toc
 end
 
+% Save data for this site 
+% tic
+% save('DATA_usgs_api.mat','out')
+% toc
 
